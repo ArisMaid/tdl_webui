@@ -16,6 +16,9 @@ type Options struct {
 	Type     Type
 	Desktop  string
 	Passcode string
+	// WebUIQR makes the QR login print the login URL as a machine-readable
+	// WEBUI_QR: line instead of a terminal QR code, for the WebUI server.
+	WebUIQR bool
 }
 
 func Run(ctx context.Context, opts Options) error {
@@ -25,7 +28,7 @@ func Run(ctx context.Context, opts Options) error {
 	case TypeCode:
 		return Code(ctx)
 	case TypeQr:
-		return QR(ctx)
+		return QR(ctx, opts.WebUIQR)
 	default:
 		return errors.Errorf("unsupported login type: %s", opts.Type)
 	}

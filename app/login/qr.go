@@ -21,7 +21,7 @@ import (
 	"github.com/iyear/tdl/pkg/tclient"
 )
 
-func QR(ctx context.Context) error {
+func QR(ctx context.Context, webui bool) error {
 	kvd, err := kv.From(ctx).Open(viper.GetString(consts.FlagNamespace))
 	if err != nil {
 		return errors.Wrap(err, "open kv")
@@ -49,6 +49,12 @@ func QR(ctx context.Context) error {
 
 		var lines int
 		_, err = c.QR().Auth(ctx, qrlogin.OnLoginToken(d), func(ctx context.Context, token qrlogin.Token) error {
+			if webui {
+				// machine-readable URL for the WebUI server
+				fmt.Printf("WEBUI_QR:%s\n", token.URL())
+				return nil
+			}
+
 			qr, err := qrcode.New(token.URL(), qrcode.Medium)
 			if err != nil {
 				return errors.Wrap(err, "create qr")

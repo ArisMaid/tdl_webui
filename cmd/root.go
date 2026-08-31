@@ -85,6 +85,12 @@ func New() *cobra.Command {
 					zap.String("namespace", ns))
 			}
 
+			// webui is a long-running server that only spawns child tdl processes;
+			// it must not hold the kv storage lock (bolt allows a single process).
+			if cmd.Name() == "webui" {
+				return nil
+			}
+
 			// v0.14.0: default storage changed from legacy to bolt, so we need to auto migrate to keep compatibility
 			if !cmd.Flags().Lookup(consts.FlagStorage).Changed && !fsutil.PathExists(defaultBoltPath) {
 				if err := migrateLegacyToBolt(); err != nil {
@@ -113,6 +119,10 @@ func New() *cobra.Command {
 			return nil
 		},
 		PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
+			if cmd.Name() == "webui" {
+				// kv storage was never opened by the webui server itself
+				return logctx.From(cmd.Context()).Sync()
+			}
 			return multierr.Combine(
 				kv.From(cmd.Context()).Close(),
 				logctx.From(cmd.Context()).Sync(),
@@ -139,7 +149,7 @@ func New() *cobra.Command {
 
 	cmd.AddCommand(NewVersion(), NewLogin(), NewDownload(), NewForward(),
 		NewChat(), NewUpload(), NewBackup(), NewRecover(), NewMigrate(),
-		NewGen(), NewUpdate(), NewExtension(em))
+		NewGen(), NewUpdate(), NewExtension(em), NewWebui())
 
 	// append extension command to root
 	exts, _ := em.List(context.Background(), false)

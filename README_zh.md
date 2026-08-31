@@ -28,6 +28,37 @@
 - 具有自动回退和消息路由的转发功能
 - 支持上传文件至 Telegram
 - 导出历史消息/成员/订阅者数据至 JSON 文件
+- **WebUI**：在浏览器中管理下载/上传/转发任务，快速调整各项参数
+
+## WebUI（网页界面）
+
+本 fork 内置了 Web 界面，一条命令启动：
+
+```shell
+tdl webui                # http://127.0.0.1:8080 (仅本机, 无需认证)
+tdl webui --host 0.0.0.0 --token my-secret-token   # 远程访问, 使用 Bearer Token 认证
+```
+
+功能：
+
+- 创建下载 / 上传 / 转发任务，CLI 全部参数均可通过表单调整
+- 实时任务列表：进度、速度、ETA 与实时日志（SSE 推送）
+- Telegram 扫码登录、会话列表浏览与搜索
+- 全局设置（namespace、proxy、threads、limit、pool、delay 等）
+- 任务通过自执行 tdl 子进程逐个运行，行为与 CLI 完全一致
+
+Docker 部署：
+
+```shell
+docker run -d --name tdl-webui \
+  -p 8080:8080 \
+  -v tdl-data:/root/.tdl \
+  -v tdl-downloads:/downloads \
+  -e TDL_WEBUI_TOKEN=change-me \
+  tdl_webui:0.1.0
+```
+
+完整开发计划见 [docs/webui-plan.md](docs/webui-plan.md)。
 
 ## 预览
 

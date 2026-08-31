@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%234da3ff'/><text x='50' y='68' font-size='52' text-anchor='middle' fill='white' font-family='Arial'>t</text></svg>">
+<title>tdl WebUI</title>
+<style>
+:root {
+  --bg: #0f1419; --panel: #1a2027; --panel2: #232a33; --border: #2e3843;
+  --text: #e6e9ec; --muted: #8b98a5; --accent: #4da3ff; --green: #2ecc71;
+  --red: #e74c3c; --yellow: #f1c40f;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 14px; line-height: 1.5;
+}
+header {
+  display: flex; align-items: center; gap: 16px; padding: 12px 20px;
+  background: var(--panel); border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 10;
+}
+header h1 { font-size: 18px; font-weight: 600; }
+header .ver { color: var(--muted); font-size: 12px; }
+header .spacer { flex: 1; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+.dot.on { background: var(--green); } .dot.off { background: var(--red); }
+nav { display: flex; gap: 4px; padding: 10px 20px 0; }
+nav button {
+  background: none; border: none; color: var(--muted); padding: 8px 16px; cursor: pointer;
+  border-bottom: 2px solid transparent; font-size: 14px;
+}
+nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+main { padding: 16px 20px 40px; max-width: 1200px; margin: 0 auto; }
+.card {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+  padding: 16px; margin-bottom: 16px;
+}
+.card h2 { font-size: 15px; margin-bottom: 12px; color: var(--text); }
+.row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+.field { display: flex; flex-direction: column; gap: 4px; flex: 1 1 220px; }
+.field label { font-size: 12px; color: var(--muted); }
+.field.full { flex: 1 1 100%; }
+input, select, textarea {
+  background: var(--panel2); border: 1px solid var(--border); color: var(--text);
+  border-radius: 6px; padding: 8px 10px; font-size: 13px; outline: none; width: 100%;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+textarea { min-height: 70px; resize: vertical; font-family: Consolas, monospace; }
+button.btn {
+  background: var(--accent); color: #fff; border: none; border-radius: 6px;
+  padding: 8px 18px; font-size: 13px; cursor: pointer; white-space: nowrap;
+}
+button.btn:hover { filter: brightness(1.1); }
+button.btn.ghost { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+button.btn.danger { background: var(--red); }
+button.btn.small { padding: 4px 10px; font-size: 12px; }
+.chk { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; }
+.chk input { width: auto; }
+.task {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+  padding: 14px 16px; margin-bottom: 12px;
+}
+.task-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.task-head .id { font-family: Consolas, monospace; font-size: 12px; color: var(--muted); }
+.badge {
+  padding: 2px 10px; border-radius: 10px; font-size: 12px; font-weight: 600;
+}
+.badge.pending { background: #34404a; color: #aab4bd; }
+.badge.running { background: #1d3a5f; color: var(--accent); }
+.badge.succeeded { background: #173f2a; color: var(--green); }
+.badge.failed { background: #4a1d1d; color: var(--red); }
+.badge.canceled { background: #4a3d1d; color: var(--yellow); }
+.progress-wrap {
+  background: var(--panel2); border-radius: 6px; height: 14px; overflow: hidden;
+  margin: 10px 0; position: relative;
+}
+.progress-bar {
+  height: 100%; background: linear-gradient(90deg, #2563eb, var(--accent));
+  transition: width .3s; width: 0;
+}
+.progress-txt {
+  position: absolute; inset: 0; text-align: center; font-size: 11px; color: #fff;
+  line-height: 14px; text-shadow: 0 1px 2px rgba(0,0,0,.6);
+}
+.meta { color: var(--muted); font-size: 12px; display: flex; gap: 16px; flex-wrap: wrap; }
+pre.log {
+  background: #0a0e12; border: 1px solid var(--border); border-radius: 6px;
+  padding: 10px; font-family: Consolas, monospace; font-size: 12px;
+  max-height: 260px; overflow: auto; white-space: pre-wrap; word-break: break-all;
+  color: #c9d3db; margin-top: 8px;
+}
+.qr-box { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+.qr-box img { background: #fff; padding: 8px; border-radius: 8px; }
+.table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+.table th, .table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+.table th { color: var(--muted); font-size: 12px; }
+.table tr:hover td { background: var(--panel2); }
+.hidden { display: none !important; }
+.toast {
+  position: fixed; bottom: 20px; right: 20px; background: var(--panel2);
+  border: 1px solid var(--border); border-left: 4px solid var(--accent);
+  padding: 12px 18px; border-radius: 8px; z-index: 100; max-width: 400px;
+}
+.toast.err { border-left-color: var(--red); }
+.section-title { font-size: 13px; color: var(--muted); margin: 18px 0 8px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>tdl <span style="color:var(--accent)">WebUI</span></h1>
+  <span class="ver" id="ver"></span>
+  <span class="spacer"></span>
+  <span><span class="dot off" id="sse-dot"></span><span id="sse-status">未连接</span></span>
+  <input id="token" type="password" placeholder="访问令牌 (可选)" style="width:180px">
+</header>
+<nav>
+  <button class="active" data-tab="tasks">任务</button>
+  <button data-tab="account">账号</button>
+  <button data-tab="settings">全局设置</button>
+</nav>
+<main>
+  <!-- tasks -->
+  <section id="tab-tasks">
+    <div class="card">
+      <h2>新建任务</h2>
+      <div class="row" style="margin-bottom:12px">
+        <div class="field" style="flex:0 0 200px">
+          <label>任务类型</label>
+          <select id="task-type">
+            <option value="download">下载 (download)</option>
+            <option value="upload">上传 (upload)</option>
+            <option value="forward">转发 (forward)</option>
+            <option value="chat-list">聊天列表 (chat ls)</option>
+            <option value="login-qr">登录 (QR)</option>
+            <option value="version">版本检查 (调试)</option>
+          </select>
+        </div>
+      </div>
+      <div id="form-download">
+        <div class="row">
+          <div class="field full"><label>消息链接 URLs (每行一个)</label><textarea id="dl-urls" placeholder="https://t.me/channel/123&#10;https://t.me/user/456"></textarea></div>
+          <div class="field full"><label>导出文件 (JSON 路径, 每行一个)</label><textarea id="dl-files" placeholder="C:\path\to\tdl-export.json"></textarea></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>保存目录</label><input id="dl-dir" value="downloads"></div>
+          <div class="field"><label>文件名模板</label><input id="dl-template" placeholder="{{ .DialogID }}_{{ .MessageID }}_{{ filenamify .FileName }}"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>包含扩展名 (逗号分隔)</label><input id="dl-include" placeholder="mp4,mp3"></div>
+          <div class="field"><label>排除扩展名 (逗号分隔)</label><input id="dl-exclude" placeholder="png,jpg"></div>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <label class="chk"><input type="checkbox" id="dl-rewrite-ext"> rewrite-ext 修正扩展名</label>
+          <label class="chk"><input type="checkbox" id="dl-skip-same"> skip-same 跳过同名同大小</label>
+          <label class="chk"><input type="checkbox" id="dl-desc"> desc 从新到旧</label>
+          <label class="chk"><input type="checkbox" id="dl-takeout"> takeout 低限流导出</label>
+          <label class="chk"><input type="checkbox" id="dl-group"> group 自动下载分组消息</label>
+          <label class="chk"><input type="checkbox" id="dl-continue"> continue 续传</label>
+          <label class="chk"><input type="checkbox" id="dl-restart"> restart 重新开始</label>
+        </div>
+      </div>
+      <div id="form-upload" class="hidden">
+        <div class="row">
+          <div class="field full"><label>文件/目录路径 (每行一个)</label><textarea id="up-paths" placeholder="D:\videos\movie.mp4"></textarea></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>目标 Chat (id 或域名, 空为已保存消息)</label><input id="up-chat"></div>
+          <div class="field"><label>Topic ID</label><input id="up-topic" type="number"></div>
+          <div class="field"><label>Caption 模板</label><input id="up-caption" placeholder="{{ .FileName }}"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>包含扩展名</label><input id="up-include"></div>
+          <div class="field"><label>排除扩展名</label><input id="up-exclude"></div>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <label class="chk"><input type="checkbox" id="up-rm"> rm 上传后删除</label>
+          <label class="chk"><input type="checkbox" id="up-photo"> photo 作为图片上传</label>
+        </div>
+      </div>
+      <div id="form-forward" class="hidden">
+        <div class="row">
+          <div class="field full"><label>来源消息 (链接或 JSON 文件, 每行一个)</label><textarea id="fw-from"></textarea></div>
+          <div class="field full"><label>目标 To (chat 或表达式)</label><input id="fw-to" placeholder="https://t.me/target"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>转发模式</label><select id="fw-mode"><option value="direct">direct</option><option value="clone">clone</option></select></div>
+          <div class="field"><label>Edit 表达式</label><input id="fw-edit"></div>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <label class="chk"><input type="checkbox" id="fw-silent"> silent 静默发送</label>
+          <label class="chk"><input type="checkbox" id="fw-dry-run"> dry-run 试运行</label>
+          <label class="chk"><input type="checkbox" id="fw-single"> single 不检测分组</label>
+          <label class="chk"><input type="checkbox" id="fw-desc"> desc 倒序</label>
+        </div>
+      </div>
+      <div id="form-chat-list" class="hidden">
+        <div class="row">
+          <div class="field"><label>Filter 表达式 (默认 true)</label><input id="cl-filter" placeholder="true"></div>
+        </div>
+      </div>
+      <div id="form-login-qr" class="hidden">
+        <p style="color:var(--muted);font-size:13px">启动后页面将显示 Telegram 登录二维码，请在手机 Telegram 中扫码确认。登录成功后自动写入当前命名空间的会话。</p>
+      </div>
+      <div id="form-version" class="hidden">
+        <p style="color:var(--muted);font-size:13px">运行 tdl version 以验证任务执行器。</p>
+      </div>
+      <div class="row" style="margin-top:14px">
+        <button class="btn" id="btn-create">启动任务</button>
+      </div>
+    </div>
+    <div class="section-title" id="task-count">任务列表</div>
+    <div id="task-list"></div>
+  </section>
+
+  <!-- account -->
+  <section id="tab-account" class="hidden">
+    <div class="card">
+      <h2>Telegram 账号</h2>
+      <div class="qr-box">
+        <div id="qr-area" style="display:none">
+          <img id="qr-img" alt="QR code" style="max-width:300px">
+          <p style="margin-top:8px;font-size:12px;color:var(--muted)">请在 Telegram: 设置 → 设备 → 扫码登录</p>
+          <p><a id="qr-link" href="#" target="_blank" style="color:var(--accent);font-size:12px">打开登录链接</a></p>
+        </div>
+        <div>
+          <button class="btn" id="btn-qr-login">生成登录二维码</button>
+          <p style="color:var(--muted);font-size:12px;margin-top:8px">命名空间: <span id="acc-ns">default</span></p>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>聊天列表 <button class="btn small ghost" id="btn-chats">刷新</button></h2>
+      <div class="row" style="margin-bottom:8px">
+        <div class="field"><input id="chat-search" placeholder="搜索名称 / 用户名 / ID"></div>
+      </div>
+      <div style="max-height:480px;overflow:auto">
+      <table class="table" id="chats-table">
+        <thead><tr><th>ID</th><th>类型</th><th>名称</th><th>用户名</th><th>Topics</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- settings -->
+  <section id="tab-settings" class="hidden">
+    <div class="card">
+      <h2>全局参数 (应用于所有新任务)</h2>
+      <div class="row">
+        <div class="field"><label>命名空间 ns</label><input id="g-ns" value="default"></div>
+        <div class="field"><label>代理 proxy</label><input id="g-proxy" placeholder="socks5://127.0.0.1:1080"></div>
+        <div class="field"><label>NTP 服务器</label><input id="g-ntp" placeholder="pool.ntp.org"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>并发任务数 limit</label><input id="g-limit" type="number" value="2"></div>
+        <div class="field"><label>单文件线程 threads</label><input id="g-threads" type="number" value="4"></div>
+        <div class="field"><label>DC 连接池 pool</label><input id="g-pool" type="number" value="8"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>任务间隔 delay</label><input id="g-delay" placeholder="0s"></div>
+        <div class="field"><label>重连超时 reconnect-timeout</label><input id="g-reconnect" placeholder="5m"></div>
+        <div class="field"><label>&nbsp;</label><label class="chk"><input type="checkbox" id="g-debug"> debug 调试模式</label></div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn ghost" id="btn-save-settings">保存到本机浏览器</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>关于</h2>
+      <p style="color:var(--muted);font-size:13px" id="about"></p>
+    </div>
+  </section>
+</main>
+<div id="toast" class="toast hidden"></div>
+<script>
+"use strict";
+let TOKEN = localStorage.getItem("webui_token") || "";
+const $ = id => document.getElementById(id);
+function toast(msg, isErr) {
+  const t = $("toast"); t.textContent = msg; t.className = "toast" + (isErr ? " err" : "");
+  clearTimeout(t._h); t._h = setTimeout(() => t.classList.add("hidden"), 4000);
+}
+function authHeaders() {
+  const h = { "Content-Type": "application/json" };
+  if (TOKEN) h["Authorization"] = "Bearer " + TOKEN;
+  return h;
+}
+function withToken(url) {
+  return TOKEN ? url + (url.includes("?") ? "&" : "?") + "token=" + encodeURIComponent(TOKEN) : url;
+}
+async function api(path, opts = {}) {
+  const res = await fetch(path, { ...opts, headers: authHeaders() });
+  if (res.status === 401) throw new Error("未授权: 令牌错误");
+  if (!res.ok) {
+    let detail = ""; try { detail = (await res.text()).slice(0, 300); } catch {}
+    throw new Error("HTTP " + res.status + " " + detail);
+  }
+  const ct = res.headers.get("content-type") || "";
+  return ct.includes("json") ? res.json() : res.text();
+}
+function linesOf(v) {
+  if (Array.isArray(v)) return v;
+  if (typeof v === "string") return v.split(/[\n,]/).map(s => s.trim()).filter(Boolean);
+  return [];
+}
+function globalArgs() {
+  return {
+    ns: $("g-ns").value.trim() || "default",
+    proxy: $("g-proxy").value.trim(),
+    ntp: $("g-ntp").value.trim(),
+    limit: parseInt($("g-limit").value) || 0,
+    threads: parseInt($("g-threads").value) || 0,
+    pool: parseInt($("g-pool").value) || 0,
+    delay: $("g-delay").value.trim(),
+    "reconnect-timeout": $("g-reconnect").value.trim(),
+    debug: $("g-debug").checked,
+  };
+}
+function collectTask() {
+  const type = $("task-type").value;
+  const g = globalArgs();
+  switch (type) {
+    case "download": return {
+      type,
+      args: {
+        urls: linesOf($("dl-urls").value),
+        files: linesOf($("dl-files").value),
+        dir: $("dl-dir").value.trim(),
+        template: $("dl-template").value.trim(),
+        include: linesOf($("dl-include").value),
+        exclude: linesOf($("dl-exclude").value),
+        "rewrite-ext": $("dl-rewrite-ext").checked,
+        "skip-same": $("dl-skip-same").checked,
+        desc: $("dl-desc").checked,
+        takeout: $("dl-takeout").checked,
+        group: $("dl-group").checked,
+        continue: $("dl-continue").checked,
+        restart: $("dl-restart").checked,
+      }, global: g,
+    };
+    case "upload": return {
+      type,
+      args: {
+        paths: linesOf($("up-paths").value),
+        chat: $("up-chat").value.trim(),
+        topic: parseInt($("up-topic").value) || 0,
+        caption: $("up-caption").value.trim(),
+        include: linesOf($("up-include").value),
+        exclude: linesOf($("up-exclude").value),
+        rm: $("up-rm").checked,
+        photo: $("up-photo").checked,
+      }, global: g,
+    };
+    case "forward": return {
+      type,
+      args: {
+        from: linesOf($("fw-from").value),
+        to: $("fw-to").value.trim(),
+        mode: $("fw-mode").value,
+        edit: $("fw-edit").value.trim(),
+        silent: $("fw-silent").checked,
+        "dry-run": $("fw-dry-run").checked,
+        single: $("fw-single").checked,
+        desc: $("fw-desc").checked,
+      }, global: g,
+    };
+    case "chat-list": return {
+      type, args: { filter: $("cl-filter").value.trim() || "true" }, global: g,
+    };
+    case "login-qr": return { type, args: {}, global: g };
+    case "version": return { type, args: {}, global: g };
+  }
+}
+function taskCard(t) {
+  const div = document.createElement("div");
+  div.className = "task"; div.id = "task-" + t.id;
+  const pct = t.progress && typeof t.progress.percent === "number" ? t.progress.percent : 0;
+  const meta = [];
+  if (t.progress) {
+    if (t.progress.speed) meta.push("速度 " + t.progress.speed);
+    if (t.progress.eta) meta.push("ETA " + t.progress.eta);
+    if (t.progress.done && t.progress.total) meta.push(t.progress.done + "/" + t.progress.total);
+  }
+  div.innerHTML =
+    `<div class="task-head">` +
+      `<span class="id">#${t.id}</span>` +
+      `<strong>${esc(t.type)}</strong>` +
+      `<span class="badge ${t.status}">${statusText(t.status)}</span>` +
+      (t.exitCode ? `<span style="color:var(--red);font-size:12px">exit ${t.exitCode}</span>` : "") +
+      `<span class="spacer" style="flex:1"></span>` +
+      `<span style="color:var(--muted);font-size:12px">${new Date(t.createdAt).toLocaleTimeString()}</span>` +
+      (t.status === "running" || t.status === "pending" ? `<button class="btn danger small" onclick="cancelTask('${t.id}')">取消</button>` : "") +
+    `</div>` +
+    (t.status === "running" ? `<div class="progress-wrap"><div class="progress-bar" style="width:${pct}%"></div><div class="progress-txt">${pct.toFixed(1)}%</div></div>` : "") +
+    (meta.length ? `<div class="meta">${meta.map(esc).join(" · ")}</div>` : "") +
+    (t.error ? `<div class="meta" style="color:var(--red)">${esc(t.error)}</div>` : "") +
+    (t.qr && t.qr.url ? `<div class="qr-box" style="margin-top:8px"><img src="${withToken("/api/qr?url=" + encodeURIComponent(t.qr.url))}" style="max-width:220px"><a href="${esc(t.qr.url)}" target="_blank" style="color:var(--accent)">打开登录链接</a></div>` : "") +
+    (t.logTail && t.logTail.length ? `<pre class="log">${esc(t.logTail.slice(-80).join("\n"))}</pre>` : "");
+  return div;
+}
+function esc(s) {
+  return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+function statusText(s) {
+  return { pending: "等待中", running: "运行中", succeeded: "成功", failed: "失败", canceled: "已取消" }[s] || s;
+}
+async function cancelTask(id) {
+  try { await api("/api/tasks/" + id, { method: "DELETE" }); toast("已取消 #" + id); } catch (e) { toast(e.message, true); }
+}
+function upsertTask(t) {
+  const list = $("task-list");
+  let el = document.getElementById("task-" + t.id);
+  if (!el) { el = document.createElement("div"); el.className = "task"; list.prepend(el); }
+  const card = taskCard(t);
+  el.outerHTML = card.outerHTML;
+}
+function connectSSE() {
+  const es = new EventSource(withToken("/api/events"));
+  es.addEventListener("task-created", e => upsertTask(JSON.parse(e.data).data));
+  es.addEventListener("task-state", e => upsertTask(JSON.parse(e.data).data));
+  es.addEventListener("task-progress", e => upsertTask(JSON.parse(e.data).data));
+  es.addEventListener("task-log", e => upsertTask(JSON.parse(e.data).data));
+  es.addEventListener("task-qr", e => {
+    const t = JSON.parse(e.data).data;
+    upsertTask(t);
+    if (t.qr && t.qr.url) showQR(t.qr.url);
+  });
+  es.onopen = () => { $("sse-dot").className = "dot on"; $("sse-status").textContent = "已连接"; };
+  es.onerror = () => { $("sse-dot").className = "dot off"; $("sse-status").textContent = "重连中..."; };
+}
+function showQR(url) {
+  $("qr-area").style.display = "block";
+  $("qr-img").src = withToken("/api/qr?url=" + encodeURIComponent(url));
+  $("qr-link").href = url;
+}
+async function refreshTasks() {
+  const tasks = await api("/api/tasks");
+  const list = $("task-list"); list.innerHTML = "";
+  tasks.forEach(t => list.appendChild(taskCard(t)));
+  $("task-count").textContent = "任务列表 (" + tasks.length + ")";
+}
+async function refreshChats() {
+  const rows = $("chats-table").querySelector("tbody");
+  rows.innerHTML = "<tr><td colspan=5>加载中...</td></tr>";
+  try {
+    const chats = await api("/api/chats?ns=" + encodeURIComponent(globalArgs().ns));
+    const q = $("chat-search").value.trim().toLowerCase();
+    rows.innerHTML = "";
+    chats.filter(c => !q || (c.visible_name || "").toLowerCase().includes(q) || (c.username || "").toLowerCase().includes(q) || String(c.id).includes(q))
+      .forEach(c => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${c.id}</td><td>${esc(c.type)}</td><td>${esc(c.visible_name)}</td><td>${esc(c.username)}</td><td>${esc((c.topics || []).map(x => x.title).join(", "))}</td>`;
+        rows.appendChild(tr);
+      });
+  } catch (e) { rows.innerHTML = `<tr><td colspan=5 style="color:var(--red)">${esc(e.message)}</td></tr>`; }
+}
+function bindTabs() {
+  document.querySelectorAll("nav button").forEach(b => {
+    b.onclick = () => {
+      document.querySelectorAll("nav button").forEach(x => x.classList.remove("active"));
+      b.classList.add("active");
+      ["tasks", "account", "settings"].forEach(t => $("tab-" + t).classList.toggle("hidden", t !== b.dataset.tab));
+      if (b.dataset.tab === "account") refreshChats();
+    };
+  });
+}
+function bindTypeSwitch() {
+  $("task-type").onchange = () => {
+    const t = $("task-type").value;
+    ["download", "upload", "forward", "chat-list", "login-qr", "version"].forEach(k =>
+      $("form-" + k).classList.toggle("hidden", k !== t));
+  };
+}
+function loadSettings() {
+  try {
+    const s = JSON.parse(localStorage.getItem("webui_settings") || "{}");
+    $("g-ns").value = s.ns || "default";
+    $("g-proxy").value = s.proxy || "";
+    $("g-ntp").value = s.ntp || "";
+    $("g-limit").value = s.limit ?? 2;
+    $("g-threads").value = s.threads ?? 4;
+    $("g-pool").value = s.pool ?? 8;
+    $("g-delay").value = s.delay || "";
+    $("g-reconnect").value = s["reconnect-timeout"] || "";
+    $("g-debug").checked = !!s.debug;
+  } catch {}
+}
+async function init() {
+  bindTabs(); bindTypeSwitch(); loadSettings();
+  $("acc-ns").textContent = $("g-ns").value || "default";
+  $("token").value = TOKEN;
+  $("token").onchange = () => { TOKEN = $("token").value.trim(); localStorage.setItem("webui_token", TOKEN); location.reload(); };
+  $("btn-create").onclick = async () => {
+    try {
+      const payload = collectTask();
+      const task = await api("/api/tasks", { method: "POST", body: JSON.stringify(payload) });
+      toast("任务已创建 #" + task.id);
+      upsertTask(task);
+    } catch (e) { toast(e.message, true); }
+  };
+  $("btn-qr-login").onclick = async () => {
+    try {
+      const task = await api("/api/tasks", { method: "POST", body: JSON.stringify({ type: "login-qr", args: {}, global: globalArgs() }) });
+      toast("登录任务已创建，等待二维码...");
+    } catch (e) { toast(e.message, true); }
+  };
+  $("btn-chats").onclick = refreshChats;
+  $("chat-search").oninput = refreshChats;
+  $("btn-save-settings").onclick = () => {
+    localStorage.setItem("webui_settings", JSON.stringify(globalArgs()));
+    $("acc-ns").textContent = $("g-ns").value || "default";
+    toast("设置已保存到浏览器");
+  };
+  try {
+    const info = await api("/api/info");
+    $("ver").textContent = "v" + info.version + " (" + info.commit + ")";
+    $("about").textContent = "tdl WebUI v" + info.version + " | commit " + info.commit + " | 认证: " + (info.auth ? "已启用" : "未启用") + " | 监听 " + info.addr;
+  } catch (e) { $("about").textContent = "无法获取服务信息: " + e.message; }
+  refreshTasks();
+  connectSSE();
+}
+init();
+</script>
+</body>
+</html>

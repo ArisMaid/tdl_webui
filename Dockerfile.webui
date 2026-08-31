@@ -1,0 +1,49 @@
+# tdl WebUI image: single binary with embedded frontend.
+# Usage:
+#   docker run -d --name tdl-webui \
+#     -p 8080:8080 \
+#     -v tdl-data:/root/.tdl \
+#     -v tdl-downloads:/downloads \
+#     -e TDL_WEBUI_TOKEN=change-me \
+#     tdl_webui:0.1.0
+#
+# https://www.docker.com/blog/faster-multi-platform-builds-dockerfile-cross-compilation-guide/
+FROM --platform=$BUILDPLATFORM golang:1.25-alpine AS builder
+
+ARG VERSION="dev"
+ARG COMMIT="unknown"
+ARG COMMIT_DATE="unknown"
+
+WORKDIR /src
+
+COPY . .
+
+ARG TARGETOS
+ARG TARGETARCH
+
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg/mod \
+    GOOS=$TARGETOS GOARCH=$TARGETARCH \
+    go build -trimpath \
+    -ldflags "-s -w  \
+    -X github.com/iyear/tdl/pkg/consts.Version=${VERSION}  \
+    -X github.com/iyear/tdl/pkg/consts.Commit=${COMMIT}  \
+    -X github.com/iyear/tdl/pkg/consts.CommitDate=${COMMIT_DATE}" \
+    -o tdl .
+
+FROM alpine:latest
+
+RUN apk add --no-cache ca-certificates
+
+COPY --from=builder /src/tdl /usr/bin/tdl
+
+# WebUI listens on 8080 by default
+EXPOSE 8080
+
+# Persistent data: Telegram session / downloads
+VOLUME ["/root/.tdl"]
+
+ENV TDL_WEBUI_TOKEN=""
+
+# bind 0.0.0.0 so the port mapping works from outside the container
+ENTRYPOINT ["tdl", "webui", "--host", "0.0.0.0"]

@@ -13,8 +13,9 @@ import (
 
 func NewLogin() *cobra.Command {
 	var (
-		code bool
-		opts login.Options
+		code    bool
+		webuiQR bool
+		opts    login.Options
 	)
 
 	cmd := &cobra.Command{
@@ -29,6 +30,7 @@ func NewLogin() *cobra.Command {
 				return login.Code(logctx.Named(cmd.Context(), "login"))
 			}
 
+			opts.WebUIQR = webuiQR
 			return login.Run(logctx.Named(cmd.Context(), "login"), opts)
 		},
 	}
@@ -38,6 +40,7 @@ func NewLogin() *cobra.Command {
 	cmd.Flags().VarP(&opts.Type, "type", "T", fmt.Sprintf("login mode: [%s]", strings.Join(login.TypeNames(), ", ")))
 	cmd.Flags().StringVarP(&opts.Desktop, desktop, "d", "", "official desktop client path, and automatically find possible paths if empty")
 	cmd.Flags().StringVarP(&opts.Passcode, "passcode", "p", "", "passcode for desktop client, keep empty if no passcode")
+	cmd.Flags().BoolVar(&webuiQR, "webui-qr", false, "output the QR login URL as a machine-readable WEBUI_QR: line instead of a terminal QR code")
 
 	// Deprecated
 	cmd.Flags().BoolVar(&code, "code", false, "login with code, instead of importing session from desktop client")
