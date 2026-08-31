@@ -43,7 +43,6 @@ EXPOSE 8080
 # Persistent data: Telegram session / downloads
 VOLUME ["/root/.tdl"]
 
-ENV TDL_WEBUI_TOKEN=""
-
+# Optional bearer token (recommended); set at run time with -e TDL_WEBUI_TOKEN=...
 # bind 0.0.0.0 so the port mapping works from outside the container
 ENTRYPOINT ["tdl", "webui", "--host", "0.0.0.0"]
