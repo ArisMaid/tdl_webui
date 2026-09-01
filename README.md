@@ -53,6 +53,16 @@ docker run -d --name tdl-webui \
   tdl_webui:0.1.0
 ```
 
+Prebuilt multi-arch images (linux/amd64, linux/arm64, linux/arm/v7) are published to GitHub Container Registry by GitHub Actions on every tag and `master` push:
+
+```
+docker login ghcr.io -u ArisMaid   # needs a personal access token with read:packages scope
+docker pull ghcr.io/arismaid/tdl_webui:0.1.0
+docker run -d --name tdl-webui -p 8080:8080 -e TDL_WEBUI_TOKEN=change-me ghcr.io/arismaid/tdl_webui:0.1.0
+```
+
+> The package is private by default. To pull without a token on other devices, make it public: repo page → Packages → tdl_webui → Package settings → Change visibility → Public.
+
 See [docs/webui-plan.md](docs/webui-plan.md) for the full development plan.
 
 ## Preview

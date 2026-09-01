@@ -58,6 +58,16 @@ docker run -d --name tdl-webui \
   tdl_webui:0.1.0
 ```
 
+GitHub Actions 会在每次 tag 与 master 推送时自动构建多架构镜像（linux/amd64、linux/arm64、linux/arm/v7）并发布到 GitHub Container Registry：
+
+```
+docker login ghcr.io -u ArisMaid   # 需要一个带 read:packages 权限的 Personal Access Token
+docker pull ghcr.io/arismaid/tdl_webui:0.1.0
+docker run -d --name tdl-webui -p 8080:8080 -e TDL_WEBUI_TOKEN=change-me ghcr.io/arismaid/tdl_webui:0.1.0
+```
+
+> 镜像包默认是私有的。若要在其他设备免登录拉取，请将其设为公开：仓库页 → Packages → tdl_webui → Package settings → Change visibility → Public。
+
 完整开发计划见 [docs/webui-plan.md](docs/webui-plan.md)。
 
 ## 预览
